@@ -215,11 +215,11 @@ donnees_larges = np.random.normal(100, 25, 200)
 donnees_asym_droite = np.random.exponential(20, 200) + 50
 
 # 4. Distribution avec outliers
-donnees_outliers = np.random.normal(100, 10, 200)
+donnees_base = np.random.normal(100, 10, 194)
 # Ajouter quelques valeurs extrêmes
-donnees_outliers = np.append(donnees_outliers, [150, 155, 160, 45, 40, 35])
+donnees_outliers = np.append(donnees_base, [150, 155, 160, 45, 40, 35])
 
-# Créer un dataframe pour visualiser
+# Créer un dataframe pour visualiser (tous de même longueur maintenant)
 df_exemples = pd.DataFrame({
     'Étroite\n(peu dispersée)': donnees_etroites,
     'Large\n(très dispersée)': donnees_larges,
@@ -307,15 +307,11 @@ fig = px.line(df_melted,
               y='montant',
               color='type',
               title='Ventes avec tendance (moyenne mobile 7 jours)',
-              labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'},
-              color_discrete_map={'ventes': 'lightblue', 'moyenne_mobile_7j': 'red'})
+              labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'})
 
-# Personnaliser l'apparence des lignes
-for trace in fig.data:
-    if trace.name == 'ventes':
-        trace.update(line=dict(width=1), opacity=0.5)
-    elif trace.name == 'moyenne_mobile_7j':
-        trace.update(line=dict(width=2))
+# Personnaliser l'apparence des lignes selon le type
+fig.update_traces(line=dict(color='lightblue', width=1), opacity=0.5, selector=dict(legendgroup='ventes'))
+fig.update_traces(line=dict(color='red', width=2), selector=dict(legendgroup='moyenne_mobile_7j'))
 
 fig.update_layout(
     xaxis_title='Date',
