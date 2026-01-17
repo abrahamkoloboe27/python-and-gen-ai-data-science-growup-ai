@@ -224,12 +224,7 @@ df_exemples = pd.DataFrame({
     'Étroite\n(peu dispersée)': donnees_etroites,
     'Large\n(très dispersée)': donnees_larges,
     'Asymétrique\n(skewed)': donnees_asym_droite,
-    'Avec outliers': donnees_outliers[:200]  # Même taille pour cohérence
-})
-
-# Ajouter les outliers séparément
-outliers_df = pd.DataFrame({
-    'Avec outliers': donnees_outliers[200:]
+    'Avec outliers': donnees_outliers
 })
 
 # Combiner
@@ -315,8 +310,12 @@ fig = px.line(df_melted,
               labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'},
               color_discrete_map={'ventes': 'lightblue', 'moyenne_mobile_7j': 'red'})
 
-fig.update_traces(selector=dict(name='ventes'), line=dict(width=1), opacity=0.5)
-fig.update_traces(selector=dict(name='moyenne_mobile_7j'), line=dict(width=2))
+# Personnaliser l'apparence des lignes
+for trace in fig.data:
+    if trace.name == 'ventes':
+        trace.update(line=dict(width=1), opacity=0.5)
+    elif trace.name == 'moyenne_mobile_7j':
+        trace.update(line=dict(width=2))
 
 fig.update_layout(
     xaxis_title='Date',
