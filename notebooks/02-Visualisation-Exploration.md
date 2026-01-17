@@ -17,7 +17,6 @@ La visualisation de données est essentielle pour comprendre rapidement vos donn
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 ```
 
@@ -198,6 +197,67 @@ fig.show()
 - **Médiane décalée** : Distribution asymétrique
 - **Points au-delà des moustaches** : Outliers (valeurs > Q3 + 1.5×IQR ou < Q1 - 1.5×IQR)
 
+### 🎨 Exemples visuels de différents types de boxplots
+
+Pour mieux comprendre l'interprétation, générons des données avec différentes caractéristiques :
+
+```python
+# Générer différents types de distributions
+np.random.seed(123)
+
+# 1. Distribution étroite et symétrique (données concentrées)
+donnees_etroites = np.random.normal(100, 5, 200)
+
+# 2. Distribution large et symétrique (données dispersées)
+donnees_larges = np.random.normal(100, 25, 200)
+
+# 3. Distribution asymétrique à droite
+donnees_asym_droite = np.random.exponential(20, 200) + 50
+
+# 4. Distribution avec outliers
+donnees_outliers = np.random.normal(100, 10, 200)
+# Ajouter quelques valeurs extrêmes
+donnees_outliers = np.append(donnees_outliers, [150, 155, 160, 45, 40, 35])
+
+# Créer un dataframe pour visualiser
+df_exemples = pd.DataFrame({
+    'Étroite\n(peu dispersée)': donnees_etroites,
+    'Large\n(très dispersée)': donnees_larges,
+    'Asymétrique\n(skewed)': donnees_asym_droite,
+    'Avec outliers': donnees_outliers[:200]  # Même taille pour cohérence
+})
+
+# Ajouter les outliers séparément
+outliers_df = pd.DataFrame({
+    'Avec outliers': donnees_outliers[200:]
+})
+
+# Combiner
+df_exemples_long = df_exemples.melt(var_name='Type', value_name='Valeur')
+
+# Créer le boxplot comparatif
+fig = px.box(df_exemples_long, 
+             x='Type', 
+             y='Valeur',
+             color='Type',
+             title='Exemples de différents types de distributions',
+             points='outliers')
+
+fig.update_layout(
+    showlegend=False,
+    xaxis_title='Type de distribution',
+    yaxis_title='Valeur'
+)
+
+fig.show()
+```
+
+**Ce que vous devriez observer :**
+- **Étroite** : Boîte courte (faible IQR), données concentrées autour de la médiane
+- **Large** : Boîte haute (grand IQR), données très dispersées
+- **Asymétrique** : Médiane décentrée, moustache supérieure plus longue
+- **Avec outliers** : Points isolés au-delà des moustaches
+
 ---
 
 ## 📈 3. Séries temporelles
@@ -239,32 +299,30 @@ fig.show()
 df_sorted = df.sort_values('date')
 df_sorted['moyenne_mobile_7j'] = df_sorted['ventes'].rolling(window=7).mean()
 
-fig = go.Figure()
+# Créer un dataframe long pour plotly express
+df_melted = df_sorted.melt(
+    id_vars=['date'], 
+    value_vars=['ventes', 'moyenne_mobile_7j'],
+    var_name='type', 
+    value_name='montant'
+)
 
-# Données brutes
-fig.add_trace(go.Scatter(
-    x=df_sorted['date'],
-    y=df_sorted['ventes'],
-    mode='lines',
-    name='Ventes quotidiennes',
-    line=dict(color='lightblue', width=1),
-    opacity=0.5
-))
+fig = px.line(df_melted, 
+              x='date', 
+              y='montant',
+              color='type',
+              title='Ventes avec tendance (moyenne mobile 7 jours)',
+              labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'},
+              color_discrete_map={'ventes': 'lightblue', 'moyenne_mobile_7j': 'red'})
 
-# Moyenne mobile
-fig.add_trace(go.Scatter(
-    x=df_sorted['date'],
-    y=df_sorted['moyenne_mobile_7j'],
-    mode='lines',
-    name='Moyenne mobile (7 jours)',
-    line=dict(color='red', width=2)
-))
+fig.update_traces(selector=dict(name='ventes'), line=dict(width=1), opacity=0.5)
+fig.update_traces(selector=dict(name='moyenne_mobile_7j'), line=dict(width=2))
 
 fig.update_layout(
-    title='Ventes avec tendance (moyenne mobile 7 jours)',
     xaxis_title='Date',
     yaxis_title='Ventes (€)',
-    hovermode='x unified'
+    hovermode='x unified',
+    legend_title_text='Légende'
 )
 
 fig.show()
@@ -359,49 +417,31 @@ fig = px.imshow(heatmap_pivot,
 fig.show()
 ```
 
-### 🎨 Graphique combiné (subplots)
+### 🎨 Facettes (Subplots) avec Plotly Express
 
 ```python
-from plotly.subplots import make_subplots
+# Créer des graphiques en facettes (côte à côte)
+# Histogramme par produit
+fig = px.histogram(df, 
+                   x='ventes', 
+                   facet_col='produit',
+                   facet_col_wrap=2,
+                   title='Distribution des ventes par produit',
+                   nbins=20)
 
-# Créer une grille de graphiques
-fig = make_subplots(
-    rows=2, cols=2,
-    subplot_titles=('Distribution des ventes', 'Ventes par produit',
-                    'Évolution temporelle', 'Prix vs Ventes'),
-    specs=[[{"type": "histogram"}, {"type": "box"}],
-           [{"type": "scatter"}, {"type": "scatter"}]]
-)
+fig.update_layout(height=500)
+fig.show()
 
-# Histogramme
-fig.add_trace(
-    go.Histogram(x=df['ventes'], name='Ventes', nbinsx=30),
-    row=1, col=1
-)
+# Séries temporelles multiples
+df_produit = df.groupby(['date', 'produit'])['ventes'].sum().reset_index()
+fig = px.line(df_produit,
+              x='date',
+              y='ventes',
+              facet_col='produit',
+              facet_col_wrap=2,
+              title='Évolution des ventes par produit')
 
-# Boxplot
-for produit in df['produit'].unique():
-    fig.add_trace(
-        go.Box(y=df[df['produit']==produit]['ventes'], name=produit),
-        row=1, col=2
-    )
-
-# Série temporelle
-df_sorted = df.sort_values('date')
-fig.add_trace(
-    go.Scatter(x=df_sorted['date'], y=df_sorted['ventes'], 
-               mode='lines', name='Ventes'),
-    row=2, col=1
-)
-
-# Scatter
-fig.add_trace(
-    go.Scatter(x=df['prix'], y=df['ventes'], 
-               mode='markers', name='Prix vs Ventes', opacity=0.5),
-    row=2, col=2
-)
-
-fig.update_layout(height=800, showlegend=False, title_text="Dashboard de visualisation")
+fig.update_layout(height=500)
 fig.show()
 ```
 
