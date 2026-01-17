@@ -344,13 +344,14 @@ fig.show()
 
 ```python
 # Ventes par jour de la semaine et produit
-df['jour_semaine'] = pd.to_datetime(df['date']).dt.day_name()
+df['jour_semaine'] = df['date'].dt.day_name()
 heatmap_data = df.groupby(['produit', 'jour_semaine'])['ventes'].mean().reset_index()
 heatmap_pivot = heatmap_data.pivot(index='produit', columns='jour_semaine', values='ventes')
 
-# Réordonner les jours
-jours_ordre = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-heatmap_pivot = heatmap_pivot.reindex(columns=jours_ordre)
+# Réordonner les jours (ordre chronologique)
+import calendar
+jours_ordre = list(calendar.day_name)
+heatmap_pivot = heatmap_pivot.reindex(columns=[j for j in jours_ordre if j in heatmap_pivot.columns])
 
 fig = px.imshow(heatmap_pivot,
                 labels=dict(x="Jour de la semaine", y="Produit", color="Ventes moyennes"),
