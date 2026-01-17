@@ -307,11 +307,13 @@ fig = px.line(df_melted,
               y='montant',
               color='type',
               title='Ventes avec tendance (moyenne mobile 7 jours)',
-              labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'})
+              labels={'date': 'Date', 'montant': 'Ventes (€)', 'type': 'Type'},
+              color_discrete_map={'ventes': 'lightblue', 'moyenne_mobile_7j': 'red'})
 
-# Personnaliser l'apparence des lignes selon le type
-fig.update_traces(line=dict(color='lightblue', width=1), opacity=0.5, selector=dict(legendgroup='ventes'))
-fig.update_traces(line=dict(color='red', width=2), selector=dict(legendgroup='moyenne_mobile_7j'))
+# Rendre la ligne des ventes plus transparente et fine
+fig.data[0].update(line=dict(width=1), opacity=0.5)
+# Rendre la ligne de moyenne mobile plus épaisse
+fig.data[1].update(line=dict(width=2))
 
 fig.update_layout(
     xaxis_title='Date',
