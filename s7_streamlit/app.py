@@ -75,6 +75,7 @@ if 'index_data' not in st.session_state:
     st.session_state.index_data = {}
 
 # Fonction pour charger les données
+@st.cache_data
 def load_data(file):
     """Charger un fichier CSV"""
     try:
@@ -84,10 +85,11 @@ def load_data(file):
         return None, str(e)
 
 # Fonction pour indexer les documents
-def index_documents(df, text_column):
+@st.cache_data
+def index_documents(_df, text_column):
     """Créer un index simple pour la recherche"""
     index = {}
-    for idx, row in df.iterrows():
+    for idx, row in _df.iterrows():
         text = str(row[text_column]).lower()
         words = set(re.findall(r'\w+', text))
         for word in words:
@@ -367,12 +369,7 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown(
-    """
-    <div style="text-align: center; color: gray; padding: 20px;">
-        Séance 7 — Streamlit : Prototypage d'interface | 
-        Développé avec ❤️ et Streamlit
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.markdown("**Séance 7 — Streamlit : Prototypage d'interface**")
+    st.caption("Développé avec ❤️ et Streamlit")

@@ -6,7 +6,7 @@ L'API expose des endpoints pour la prédiction, la santé du service, et la docu
 """
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict, List, Optional
 import numpy as np
 from datetime import datetime
@@ -22,29 +22,31 @@ app = FastAPI(
 # Modèle Pydantic pour la validation des requêtes
 class TextInput(BaseModel):
     """Modèle pour l'input de prédiction"""
-    text: str = Field(..., min_length=1, max_length=10000, description="Texte à classifier")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{
                 "text": "Comment réinitialiser mon mot de passe ?"
-            }
+            }]
         }
+    )
+    
+    text: str = Field(..., min_length=1, max_length=10000, description="Texte à classifier")
 
 
 class BatchTextInput(BaseModel):
     """Modèle pour les prédictions en batch"""
-    texts: List[str] = Field(..., min_items=1, max_items=100, description="Liste de textes à classifier")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{
                 "texts": [
                     "Comment réinitialiser mon mot de passe ?",
                     "Dans cet article, nous explorons les tendances du machine learning."
                 ]
-            }
+            }]
         }
+    )
+    
+    texts: List[str] = Field(..., min_items=1, max_items=100, description="Liste de textes à classifier")
 
 
 class PredictionResponse(BaseModel):
