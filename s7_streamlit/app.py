@@ -117,9 +117,8 @@ def search_documents(df, query, text_column, mode="contains", case_sensitive=Fal
         # Trouver les documents contenant tous les mots-clés
         matching_indices = None
         for word in query_words:
-            word_lower = word.lower() if not case_sensitive else word
-            if word_lower in index_data:
-                word_indices = set(index_data[word_lower])
+            if word in index_data:
+                word_indices = set(index_data[word])
                 if matching_indices is None:
                     matching_indices = word_indices
                 else:
@@ -130,7 +129,8 @@ def search_documents(df, query, text_column, mode="contains", case_sensitive=Fal
                 break
         
         if matching_indices:
-            results_mask[list(matching_indices)] = True
+            # Utiliser iloc pour une meilleure performance
+            results_mask.iloc[list(matching_indices)] = True
         return df[results_mask]
     
     # Recherche classique pour les autres modes
