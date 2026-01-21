@@ -256,7 +256,7 @@ st.plotly_chart(fig)
 
 ### Exercice 5: Multi-pages
 - Créer plusieurs pages (recherche, statistiques, admin)
-- Utiliser `st.navigation()` pour la navigation
+- Utiliser la structure multi-pages native de Streamlit (dossier `pages/` avec plusieurs scripts `.py`)
 - Organiser le code en modules
 
 ---

@@ -11,7 +11,6 @@ Cette application Streamlit permet de :
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime
 import re
 
@@ -99,7 +98,7 @@ def index_documents(_df, text_column):
     return index
 
 # Fonction de recherche
-def search_documents(df, query, text_column, mode="contains", case_sensitive=False):
+def search_documents(df, query, text_column, mode="contains", case_sensitive=False, index_data=None):
     """Rechercher dans les documents"""
     if df is None or df.empty:
         return pd.DataFrame()
@@ -109,6 +108,32 @@ def search_documents(df, query, text_column, mode="contains", case_sensitive=Fal
     
     results_mask = pd.Series([False] * len(df))
     
+    # Utiliser l'index pour la recherche par mots-clés si disponible
+    if mode == "Mots-clés (exact)" and index_data is not None:
+        query_words = set(re.findall(r'\w+', query))
+        if not case_sensitive:
+            query_words = {word.lower() for word in query_words}
+        
+        # Trouver les documents contenant tous les mots-clés
+        matching_indices = None
+        for word in query_words:
+            word_lower = word.lower() if not case_sensitive else word
+            if word_lower in index_data:
+                word_indices = set(index_data[word_lower])
+                if matching_indices is None:
+                    matching_indices = word_indices
+                else:
+                    matching_indices = matching_indices.intersection(word_indices)
+            else:
+                # Si un mot n'est pas trouvé, aucun résultat
+                matching_indices = set()
+                break
+        
+        if matching_indices:
+            results_mask[list(matching_indices)] = True
+        return df[results_mask]
+    
+    # Recherche classique pour les autres modes
     for idx, row in df.iterrows():
         text = str(row[text_column])
         if not case_sensitive:
@@ -193,12 +218,15 @@ if uploaded_file is not None:
             
             if search_query:
                 with st.spinner("Recherche en cours..."):
+                    # Passer l'index si disponible
+                    index_to_use = st.session_state.index_data if st.session_state.indexed else None
                     results = search_documents(
                         df, 
                         search_query, 
                         text_column, 
                         mode=search_mode,
-                        case_sensitive=case_sensitive
+                        case_sensitive=case_sensitive,
+                        index_data=index_to_use
                     )
                 
                 st.markdown("---")

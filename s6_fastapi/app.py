@@ -7,8 +7,7 @@ L'API expose des endpoints pour la prédiction, la santé du service, et la docu
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Dict, List, Optional
-import numpy as np
+from typing import List
 from datetime import datetime
 import uvicorn
 
