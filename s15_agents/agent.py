@@ -5,6 +5,7 @@ Agent autonome utilisant le pattern ReAct (Reasoning + Acting)
 
 import os
 import re
+import json
 from typing import Dict, List, Optional, Tuple
 from dotenv import load_dotenv
 from langchain.chat_models import ChatOpenAI
@@ -208,7 +209,6 @@ Commence maintenant!"""
         
         # Parser le JSON si c'est un dict
         if input_str.startswith('{'):
-            import json
             try:
                 action_input = json.loads(input_str)
             except json.JSONDecodeError:

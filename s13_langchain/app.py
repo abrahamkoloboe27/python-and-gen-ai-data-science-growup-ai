@@ -8,8 +8,11 @@ Application démontrant les patterns LangChain essentiels:
 
 import os
 from dotenv import load_dotenv
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    # Fallback pour anciennes versions de LangChain
+    from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, ChatPromptTemplate
 from langchain.chains import LLMChain, SequentialChain, SimpleSequentialChain
 from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory

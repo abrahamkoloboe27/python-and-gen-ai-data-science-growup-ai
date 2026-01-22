@@ -82,7 +82,7 @@ def web_search(query: str) -> str:
 
 def calculator(expression: str) -> float:
     """
-    Évalue une expression mathématique
+    Évalue une expression mathématique de manière sécurisée
     
     Args:
         expression: Expression mathématique (ex: "2 + 2", "10 * 1.5")
@@ -90,6 +90,9 @@ def calculator(expression: str) -> float:
     Returns:
         Résultat du calcul
     """
+    import ast
+    import operator
+    
     # Nettoyer l'expression
     expression = expression.strip()
     
@@ -98,9 +101,32 @@ def calculator(expression: str) -> float:
     if not all(c in allowed_chars for c in expression):
         raise ValueError("Expression contient des caractères non autorisés")
     
+    # Opérateurs autorisés
+    ops = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.USub: operator.neg,
+    }
+    
+    def eval_expr(node):
+        """Évaluer de manière récursive et sécurisée"""
+        if isinstance(node, ast.Num):  # Nombre
+            return node.n
+        elif isinstance(node, ast.BinOp):  # Opération binaire
+            left = eval_expr(node.left)
+            right = eval_expr(node.right)
+            return ops[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):  # Opération unaire
+            return ops[type(node.op)](eval_expr(node.operand))
+        else:
+            raise ValueError(f"Opération non autorisée: {type(node).__name__}")
+    
     try:
-        # Évaluer l'expression
-        result = eval(expression)
+        # Parser et évaluer l'expression de manière sécurisée
+        node = ast.parse(expression, mode='eval')
+        result = eval_expr(node.body)
         return round(result, 2)
     except Exception as e:
         raise ValueError(f"Expression invalide: {e}")
