@@ -1,0 +1,102 @@
+[
+  {
+    "id": "doc1",
+    "title": "Introduction au Machine Learning",
+    "content": "Le machine learning (apprentissage automatique) est une branche de l'intelligence artificielle qui permet aux ordinateurs d'apprendre à partir de données sans être explicitement programmés. Les algorithmes de ML identifient des patterns dans les données et utilisent ces patterns pour faire des prédictions sur de nouvelles données. Il existe trois types principaux de ML: supervisé (avec labels), non-supervisé (sans labels), et par renforcement (apprentissage par récompenses). Les applications incluent la reconnaissance d'images, le traitement du langage naturel, les systèmes de recommandation, et la détection de fraude.",
+    "metadata": {
+      "category": "ML",
+      "author": "Alice Martin",
+      "date": "2024-01-15"
+    }
+  },
+  {
+    "id": "doc2",
+    "title": "Les Transformers en NLP",
+    "content": "Les Transformers sont une architecture de réseaux de neurones révolutionnaire introduite en 2017 dans le paper 'Attention is All You Need'. Contrairement aux RNN, les Transformers utilisent le mécanisme d'attention pour traiter les séquences en parallèle. L'architecture comprend des encodeurs et décodeurs avec multi-head attention et feed-forward networks. BERT, GPT, et T5 sont des modèles basés sur les Transformers. Le mécanisme d'attention permet au modèle de pondérer l'importance de chaque mot par rapport aux autres. Les Transformers ont dominé le NLP et s'étendent maintenant à la vision (ViT) et multimodal.",
+    "metadata": {
+      "category": "NLP",
+      "author": "Bob Chen",
+      "date": "2024-01-20"
+    }
+  },
+  {
+    "id": "doc3",
+    "title": "Python pour la Data Science",
+    "content": "Python est devenu le langage de référence pour la data science grâce à son écosystème riche de bibliothèques. NumPy fournit des opérations matricielles rapides, Pandas permet la manipulation de données tabulaires, Matplotlib et Seaborn offrent des capacités de visualisation, et scikit-learn propose des algorithmes de ML prêts à l'emploi. Jupyter notebooks permettent le développement interactif. Pour le deep learning, PyTorch et TensorFlow sont les frameworks principaux. La simplicité syntaxique de Python et sa large communauté en font un excellent choix pour les data scientists.",
+    "metadata": {
+      "category": "Programming",
+      "author": "Clara Lopez",
+      "date": "2024-01-10"
+    }
+  },
+  {
+    "id": "doc4",
+    "title": "RAG: Retrieval Augmented Generation",
+    "content": "RAG combine la recherche d'information (retrieval) et la génération de texte pour améliorer les LLMs. Le processus: 1) La question est convertie en embedding, 2) Les documents pertinents sont récupérés via recherche vectorielle, 3) Le contexte est construit avec ces documents, 4) Le LLM génère une réponse basée sur ce contexte. Avantages: réponses plus factuelles, réduction des hallucinations, capacité à utiliser des connaissances actualisées. Les composants clés sont: embeddings model (pour vectoriser), vector database (FAISS, Pinecone), et LLM (GPT-4, Claude). Le chunking et le reranking améliorent la qualité.",
+    "metadata": {
+      "category": "NLP",
+      "author": "David Kim",
+      "date": "2024-01-22"
+    }
+  },
+  {
+    "id": "doc5",
+    "title": "FAISS: Recherche Vectorielle Efficace",
+    "content": "FAISS (Facebook AI Similarity Search) est une bibliothèque optimisée pour la recherche de similarité dans de grands ensembles de vecteurs. Elle propose plusieurs types d'index: Flat (exact mais lent), IVF (clustering pour accélérer), HNSW (graph-based, très rapide), et PQ (compression). FAISS utilise du code C++ optimisé et supporte le GPU pour des performances extrêmes. Pour choisir un index: Flat pour <10k vecteurs, IVF pour 10k-10M, IVFPQ avec compression pour >10M. Les métriques de distance incluent L2 (euclidienne) et inner product (cosine si normalisé). FAISS est largement utilisé en production.",
+    "metadata": {
+      "category": "ML",
+      "author": "Elena Rodriguez",
+      "date": "2024-01-18"
+    }
+  },
+  {
+    "id": "doc6",
+    "title": "FastAPI pour les APIs ML",
+    "content": "FastAPI est un framework moderne pour créer des APIs en Python avec des performances élevées. Basé sur les type hints de Python 3.6+, il offre validation automatique, documentation interactive (Swagger UI), et sérialisation JSON rapide. Pour déployer un modèle ML: 1) Charger le modèle au startup, 2) Créer un endpoint POST avec Pydantic models, 3) Valider les inputs, 4) Faire la prédiction, 5) Retourner les résultats. FastAPI est asynchrone par défaut, supporte WebSockets, et s'intègre facilement avec Docker. Uvicorn est le serveur ASGI recommandé. Excellente alternative à Flask pour de nouvelles APIs.",
+    "metadata": {
+      "category": "Programming",
+      "author": "Frank White",
+      "date": "2024-01-12"
+    }
+  },
+  {
+    "id": "doc7",
+    "title": "Fine-tuning des LLMs",
+    "content": "Le fine-tuning adapte un modèle pré-entraîné à une tâche spécifique avec un dataset plus petit. Méthodes: full fine-tuning (coûteux), PEFT (Parameter-Efficient Fine-Tuning), et LoRA (Low-Rank Adaptation, très efficace). Le processus: 1) Préparer un dataset de qualité (prompts + completions), 2) Choisir un modèle de base (GPT-3.5, Llama), 3) Configurer les hyperparamètres (learning rate, epochs), 4) Entraîner avec monitoring, 5) Évaluer sur un test set. LoRA réduit les paramètres entraînables de >99% tout en gardant les performances. OpenAI, Hugging Face, et Anthropic offrent des APIs de fine-tuning.",
+    "metadata": {
+      "category": "NLP",
+      "author": "Grace Thompson",
+      "date": "2024-01-25"
+    }
+  },
+  {
+    "id": "doc8",
+    "title": "Embeddings et Représentations Vectorielles",
+    "content": "Les embeddings sont des représentations vectorielles denses qui capturent la sémantique. Word embeddings (Word2Vec, GloVe) représentent des mots, sentence embeddings (SBERT) des phrases, et document embeddings des documents entiers. Les embeddings similaires en sémantique sont proches en distance cosinus. Modèles populaires: OpenAI text-embedding-3, sentence-transformers (open source), Cohere embed-v3. Dimensions typiques: 384-1536. Applications: recherche sémantique, clustering, classification, recommandation. Pour créer: encode(text) retourne un vecteur. Pour comparer: cosine_similarity(vec1, vec2). Les embeddings multilingues alignent plusieurs langues dans le même espace.",
+    "metadata": {
+      "category": "NLP",
+      "author": "Henry Brown",
+      "date": "2024-01-14"
+    }
+  },
+  {
+    "id": "doc9",
+    "title": "Docker pour le Déploiement ML",
+    "content": "Docker conteneurise les applications pour assurer la reproductibilité entre environnements. Un Dockerfile définit l'image: FROM base image, COPY code, RUN pip install, CMD start app. Pour une API ML: utiliser une image Python slim, copier requirements.txt et model, exposer le port, et lancer uvicorn. Docker compose orchestre plusieurs services (API + DB + Redis). Avantages: isolation, portabilité, scaling facile avec Kubernetes. Best practices: multi-stage builds pour réduire la taille, utiliser .dockerignore, ne pas inclure de secrets dans l'image. Docker Hub et registries privés hébergent les images.",
+    "metadata": {
+      "category": "DevOps",
+      "author": "Irene Lee",
+      "date": "2024-01-08"
+    }
+  },
+  {
+    "id": "doc10",
+    "title": "Prompt Engineering Avancé",
+    "content": "Le prompt engineering optimise les instructions données aux LLMs pour obtenir de meilleurs résultats. Techniques: zero-shot (aucun exemple), few-shot (2-5 exemples), chain-of-thought (raisonnement étape par étape), self-consistency (générer plusieurs réponses et voter), ReAct (reasoning + acting). Structure d'un bon prompt: rôle système, contexte, instructions claires, exemples, contraintes, format de sortie. Paramètres importants: temperature (0.0-2.0), top_p, max_tokens. Pour des tâches complexes, décomposer en sous-tâches. Tester et itérer: logger les inputs/outputs, mesurer la qualité, A/B tester. LangChain et autres frameworks facilitent le prompt management.",
+    "metadata": {
+      "category": "NLP",
+      "author": "Jack Wilson",
+      "date": "2024-01-23"
+    }
+  }
+]
