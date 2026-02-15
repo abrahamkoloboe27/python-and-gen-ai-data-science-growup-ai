@@ -1,0 +1,19 @@
+# S9 - Groq et Prompt Engineering
+# Requirements pour les notebooks s9_groq_prompts.ipynb et s9_groq_openai_compatible.ipynb
+
+# Client Groq natif
+groq>=0.4.0
+
+# Client OpenAI (pour compatibilité avec Groq)
+openai>=1.0.0
+
+# Utilitaires
+python-dotenv>=1.0.0
+
+# Pour les notebooks Jupyter
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Optionnel - pour de meilleures visualisations
+matplotlib>=3.5.0
+pandas>=1.5.0
