@@ -55,12 +55,17 @@ Chaque notebook produit:
 
 ## 🚀 Installation
 
+**Prérequis:** Python 3.9 ou supérieur
+
 ```bash
 # Pour le notebook natif Groq
 pip install groq python-dotenv
 
 # Pour le notebook OpenAI-compatible
 pip install openai python-dotenv
+
+# Ou installer toutes les dépendances avec:
+pip install -r s9_requirements.txt
 ```
 
 ## 🔑 Configuration
