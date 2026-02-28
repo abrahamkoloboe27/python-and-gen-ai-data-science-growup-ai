@@ -37,14 +37,14 @@ class TestConversationMemory:
     
     def test_memory_buffer_initialization(self, app):
         """Test l'initialisation de ConversationBufferMemory"""
-        from langchain.memory import ConversationBufferMemory
+        from langchain_classic.memory import ConversationBufferMemory
         
         memory = ConversationBufferMemory()
         assert memory is not None
     
     def test_memory_buffer_window_initialization(self, app):
         """Test l'initialisation de ConversationBufferWindowMemory"""
-        from langchain.memory import ConversationBufferWindowMemory
+        from langchain_classic.memory import ConversationBufferWindowMemory
         
         memory = ConversationBufferWindowMemory(k=5)
         assert memory is not None
@@ -52,7 +52,7 @@ class TestConversationMemory:
     
     def test_memory_stores_conversation(self):
         """Test que la mémoire stocke les conversations"""
-        from langchain.memory import ConversationBufferMemory
+        from langchain_classic.memory import ConversationBufferMemory
         
         memory = ConversationBufferMemory()
         memory.save_context(
@@ -66,7 +66,7 @@ class TestConversationMemory:
     
     def test_memory_window_limits_messages(self):
         """Test que la fenêtre de mémoire limite les messages"""
-        from langchain.memory import ConversationBufferWindowMemory
+        from langchain_classic.memory import ConversationBufferWindowMemory
         
         memory = ConversationBufferWindowMemory(k=2)
         
@@ -92,11 +92,11 @@ class TestMemoryIntegration:
     
     def test_memory_persists_across_turns(self):
         """Test que la mémoire persiste entre les tours"""
-        from langchain.memory import ConversationBufferMemory
-        from langchain.chains import ConversationChain
-        from langchain.llms import OpenAI
+        from langchain_classic.memory import ConversationBufferMemory
+        from langchain_classic.chains import ConversationChain
+        from langchain_community.llms import OpenAI
         
-        with patch('langchain.llms.OpenAI') as mock_llm:
+        with patch('langchain_community.llms.OpenAI') as mock_llm:
             mock_instance = MagicMock()
             mock_llm.return_value = mock_instance
             
@@ -118,7 +118,7 @@ class TestMemoryIntegration:
     
     def test_memory_clears_correctly(self):
         """Test que la mémoire peut être effacée"""
-        from langchain.memory import ConversationBufferMemory
+        from langchain_classic.memory import ConversationBufferMemory
         
         memory = ConversationBufferMemory()
         memory.save_context(
@@ -136,7 +136,7 @@ class TestMemoryTypes:
     
     def test_buffer_memory_stores_all(self):
         """Test que BufferMemory stocke tout"""
-        from langchain.memory import ConversationBufferMemory
+        from langchain_classic.memory import ConversationBufferMemory
         
         memory = ConversationBufferMemory()
         
@@ -152,7 +152,7 @@ class TestMemoryTypes:
     
     def test_window_memory_sliding_window(self):
         """Test le comportement de fenêtre glissante"""
-        from langchain.memory import ConversationBufferWindowMemory
+        from langchain_classic.memory import ConversationBufferWindowMemory
         
         k = 3
         memory = ConversationBufferWindowMemory(k=k)

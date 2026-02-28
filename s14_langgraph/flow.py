@@ -6,13 +6,9 @@ Pipeline: Retrieve → Summarize → Decide → Action/Escalate
 import os
 from typing import TypedDict, List, Literal, Annotated
 from dotenv import load_dotenv
-try:
-    from langchain_openai import ChatOpenAI
-except ImportError:
-    # Fallback pour anciennes versions de LangChain
-    from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 import random
 import logging
