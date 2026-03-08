@@ -4,22 +4,19 @@ Application Streamlit pour chatter avec un document PDF
 en utilisant LangChain et OpenAI.
 """
 
+import hashlib
 import os
 import tempfile
-import time
-from typing import Optional
 
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -74,6 +71,34 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────
+# Mémoire bornée (bounded chat history)
+# ─────────────────────────────────────────────────────────────
+
+class BoundedChatMessageHistory(BaseChatMessageHistory):
+    """
+    Historique de conversation borné : garde uniquement les N derniers tours
+    (1 tour = 1 message humain + 1 message IA, soit 2 messages).
+    """
+
+    def __init__(self, max_turns: int = 5):
+        self._messages: list[BaseMessage] = []
+        self._max_messages = max_turns * 2  # 2 messages par tour
+
+    @property
+    def messages(self) -> list[BaseMessage]:
+        return list(self._messages)
+
+    def add_messages(self, messages: list[BaseMessage]) -> None:
+        self._messages.extend(messages)
+        # Élaguer au-delà de la fenêtre maximale
+        if len(self._messages) > self._max_messages:
+            self._messages = self._messages[-self._max_messages:]
+
+    def clear(self) -> None:
+        self._messages = []
 
 
 # ─────────────────────────────────────────────────────────────
@@ -152,24 +177,15 @@ def build_vectorstore(
         os.unlink(tmp_path)
 
 
-def build_rag_chain(
+def build_retriever(
     vectorstore,
-    llm_model: str,
-    temperature: float,
     top_k: int,
     rag_type: str,
     score_threshold: float,
-    max_memory_turns: int,
 ):
-    """
-    Construit le pipeline RAG avec mémoire conversationnelle.
-
-    Returns:
-        chain (RunnableWithMessageHistory)
-    """
+    """Construit et retourne le retriever selon le type de RAG sélectionné."""
     rag_config = get_rag_type_config(rag_type)
 
-    # Configurer le retriever selon le type de RAG
     search_kwargs = {"k": top_k}
     if rag_type == "MMR (Diversifié)":
         search_kwargs["fetch_k"] = top_k * 3
@@ -177,11 +193,25 @@ def build_rag_chain(
     elif rag_type == "Similarity + Score":
         search_kwargs["score_threshold"] = score_threshold
 
-    retriever = vectorstore.as_retriever(
+    return vectorstore.as_retriever(
         search_type=rag_config["search_type"],
         search_kwargs=search_kwargs,
     )
 
+
+def build_rag_chain(
+    llm_model: str,
+    temperature: float,
+    max_memory_turns: int,
+):
+    """
+    Construit le pipeline RAG avec mémoire conversationnelle bornée.
+    Le contexte (extraits du document) est fourni en entrée, pas récupéré
+    en interne — cela permet de récupérer les sources une seule fois.
+
+    Returns:
+        chain (RunnableWithMessageHistory)
+    """
     # Initialiser le LLM
     llm = ChatOpenAI(
         model=llm_model,
@@ -189,7 +219,7 @@ def build_rag_chain(
         streaming=True,
     )
 
-    # Prompt RAG avec historique
+    # Prompt RAG avec historique — {context} est passé directement
     prompt = ChatPromptTemplate.from_messages([
         (
             "system",
@@ -210,24 +240,17 @@ Extraits du document :
         ("human", "{question}"),
     ])
 
-    # Chain principale
-    chain = (
-        RunnablePassthrough.assign(
-            context=lambda x: format_documents(
-                retriever.invoke(x["question"])
-            )
-        )
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
+    # Chain : context + question → prompt → LLM → texte
+    chain = prompt | llm | StrOutputParser()
 
-    # Gestion de la mémoire par session
-    def get_session_history(session_id: str):
-        if session_id not in st.session_state.get("chat_histories", {}):
-            if "chat_histories" not in st.session_state:
-                st.session_state.chat_histories = {}
-            st.session_state.chat_histories[session_id] = ChatMessageHistory()
+    # Gestion de la mémoire bornée par session
+    def get_session_history(session_id: str) -> BoundedChatMessageHistory:
+        if "chat_histories" not in st.session_state:
+            st.session_state.chat_histories = {}
+        if session_id not in st.session_state.chat_histories:
+            st.session_state.chat_histories[session_id] = BoundedChatMessageHistory(
+                max_turns=max_memory_turns
+            )
         return st.session_state.chat_histories[session_id]
 
     return RunnableWithMessageHistory(
@@ -235,7 +258,7 @@ Extraits du document :
         get_session_history,
         input_messages_key="question",
         history_messages_key="chat_history",
-    ), retriever
+    )
 
 
 # ─────────────────────────────────────────────────────────────
@@ -269,27 +292,26 @@ def main():
         st.divider()
 
         # Modèle LLM
+        _llm_options = ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+        _default_model = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+        _llm_index = _llm_options.index(_default_model) if _default_model in _llm_options else 0
+
         st.subheader("🤖 Modèle")
         llm_model = st.selectbox(
             "Modèle OpenAI",
-            options=[
-                "gpt-4o-mini",
-                "gpt-4o",
-                "gpt-4-turbo",
-                "gpt-3.5-turbo",
-            ],
-            index=0,
+            options=_llm_options,
+            index=_llm_index,
             help="Modèle utilisé pour générer les réponses",
         )
 
+        _emb_options = ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"]
+        _default_emb = os.getenv("DEFAULT_EMBEDDING_MODEL", "text-embedding-3-small")
+        _emb_index = _emb_options.index(_default_emb) if _default_emb in _emb_options else 0
+
         embedding_model = st.selectbox(
             "Modèle d'Embeddings",
-            options=[
-                "text-embedding-3-small",
-                "text-embedding-3-large",
-                "text-embedding-ada-002",
-            ],
-            index=0,
+            options=_emb_options,
+            index=_emb_index,
             help="Modèle pour la représentation vectorielle des textes",
         )
 
@@ -297,7 +319,7 @@ def main():
             "🌡️ Température",
             min_value=0.0,
             max_value=1.0,
-            value=0.0,
+            value=float(os.getenv("DEFAULT_TEMPERATURE", "0.0")),
             step=0.1,
             help="0 = déterministe et factuel (recommandé pour le RAG), 1.0 = réponses plus créatives",
         )
@@ -325,7 +347,7 @@ def main():
             "📄 Nombre d'extraits (top-k)",
             min_value=1,
             max_value=10,
-            value=4,
+            value=int(os.getenv("DEFAULT_TOP_K", "4")),
             help="Nombre d'extraits récupérés pour construire le contexte",
         )
 
@@ -348,7 +370,7 @@ def main():
             "Taille des chunks",
             min_value=200,
             max_value=2000,
-            value=800,
+            value=int(os.getenv("DEFAULT_CHUNK_SIZE", "800")),
             step=100,
             help="Nombre de caractères par chunk",
         )
@@ -356,7 +378,7 @@ def main():
             "Chevauchement",
             min_value=0,
             max_value=400,
-            value=100,
+            value=int(os.getenv("DEFAULT_CHUNK_OVERLAP", "100")),
             step=25,
             help="Chevauchement entre chunks consécutifs",
         )
@@ -370,7 +392,7 @@ def main():
             min_value=1,
             max_value=20,
             value=5,
-            help="Nombre de tours de conversation gardés en mémoire",
+            help="Nombre de tours de conversation gardés en mémoire (1 tour = 1 question + 1 réponse)",
         )
 
         st.divider()
@@ -402,6 +424,8 @@ Techniques utilisées :
         st.session_state.messages = []
     if "vectorstore" not in st.session_state:
         st.session_state.vectorstore = None
+    if "index_key" not in st.session_state:
+        st.session_state.index_key = None
     if "pdf_name" not in st.session_state:
         st.session_state.pdf_name = None
     if "chat_histories" not in st.session_state:
@@ -425,11 +449,14 @@ Techniques utilisées :
             st.error("❌ Veuillez entrer votre clé API OpenAI dans la barre latérale.")
             st.stop()
 
-        # Construire le vectorstore si c'est un nouveau fichier
-        if (
-            st.session_state.pdf_name != uploaded_file.name
-            or st.session_state.vectorstore is None
-        ):
+        # Clé unique qui identifie le contenu + les paramètres d'indexation.
+        # @st.cache_resource fait déjà le cache, mais cette clé permet de
+        # détecter un changement de paramètres sans comparer les bytes.
+        content_hash = hashlib.sha256(uploaded_file.getvalue()).hexdigest()[:16]
+        index_key = f"{content_hash}_{chunk_size}_{chunk_overlap}_{embedding_model}"
+
+        # Reconstruire uniquement si contenu ou paramètres ont changé
+        if st.session_state.index_key != index_key:
             with st.spinner(f"⏳ Traitement de **{uploaded_file.name}** en cours..."):
                 try:
                     vectorstore, nb_chunks, nb_pages = build_vectorstore(
@@ -439,6 +466,7 @@ Techniques utilisées :
                         embedding_model=embedding_model,
                     )
                     st.session_state.vectorstore = vectorstore
+                    st.session_state.index_key = index_key
                     st.session_state.pdf_name = uploaded_file.name
                     st.session_state.pdf_stats = {
                         "nb_pages": nb_pages,
@@ -518,40 +546,45 @@ Techniques utilisées :
                 response_placeholder = st.empty()
 
                 try:
-                    # Construire le pipeline RAG
-                    rag_chain, retriever = build_rag_chain(
+                    # ── Récupération unique des documents ─────
+                    # On récupère les docs une seule fois pour les utiliser
+                    # à la fois comme contexte du LLM et comme sources affichées.
+                    retriever = build_retriever(
                         vectorstore=st.session_state.vectorstore,
-                        llm_model=llm_model,
-                        temperature=temperature,
                         top_k=top_k,
                         rag_type=rag_type,
                         score_threshold=score_threshold,
-                        max_memory_turns=max_memory_turns,
                     )
-
-                    # Récupérer les sources
-                    sources_docs = retriever.invoke(question)
+                    source_docs = retriever.invoke(question)
+                    context = format_documents(source_docs)
                     sources = [
                         {
                             "page": doc.metadata.get("page", "?"),
                             "content": doc.page_content,
                         }
-                        for doc in sources_docs
+                        for doc in source_docs
                     ]
 
-                    # Streaming de la réponse
+                    # ── Construire la chain RAG ────────────────
+                    rag_chain = build_rag_chain(
+                        llm_model=llm_model,
+                        temperature=temperature,
+                        max_memory_turns=max_memory_turns,
+                    )
+
+                    # Streaming de la réponse (context pré-récupéré)
                     full_response = ""
                     config = {"configurable": {"session_id": "main_session"}}
 
                     for chunk in rag_chain.stream(
-                        {"question": question}, config=config
+                        {"question": question, "context": context}, config=config
                     ):
                         full_response += chunk
                         response_placeholder.markdown(full_response + "▌")
 
                     response_placeholder.markdown(full_response)
 
-                    # Afficher les sources
+                    # Afficher les sources (mêmes docs que ceux du contexte)
                     with st.expander("📚 Sources utilisées", expanded=False):
                         for src in sources:
                             page = src.get("page", "?")

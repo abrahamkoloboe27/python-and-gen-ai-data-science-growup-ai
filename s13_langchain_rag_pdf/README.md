@@ -162,10 +162,13 @@ s13_langchain_rag_pdf/
 
 ## 🔒 Sécurité & Confidentialité
 
-- ✅ Les PDFs sont traités localement (non envoyés à OpenAI bruts)
-- ✅ Seuls les **extraits pertinents** sont transmis au LLM
+- ✅ Les PDFs (fichiers bruts) sont traités localement et **ne sont pas envoyés tels quels à OpenAI**
+- ✅ En revanche, le **contenu textuel extrait** du PDF est transmis à OpenAI :
+  - pour la création d'**embeddings** (indexation vectorielle de l'ensemble du document)
+  - puis, lors d'une question, seuls les **extraits pertinents (pages/chunks)** sont envoyés au **LLM** pour générer la réponse
 - ✅ La clé API reste dans votre environnement local
 - ⚠️ Ne partagez pas votre `.env` dans un dépôt public
+- ⚠️ N'indexez pas de documents contenant des informations hautement confidentielles si votre politique interdit tout envoi à des API tierces
 
 ---
 
